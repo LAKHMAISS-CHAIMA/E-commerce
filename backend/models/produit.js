@@ -1,10 +1,9 @@
 const mongoose = require("mongoose");
 
 const produitSchema = new mongoose.Schema({
-    imageUrl:{
+    image:{
         type: String,
         required: true,
-        match: /^https?:\/\/.+/,
     },
     titre:{
         type: String,

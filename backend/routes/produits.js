@@ -5,21 +5,19 @@ const router = express.Router();
 
 router.post("/", async (req, res) => {
     try {
-        const { imageUrl, titre, description, prix, stock } = req.body;
+        const produit = new Produit({
+            nom: req.body.nom,
+            prix: req.body.prix,
+            image: req.file ? `/uploads/${req.file.images}` : null 
+        });
 
-        
-        if (!imageUrl || !titre || !description || prix == null || stock == null) {
-            return res.status(400).json({ error: "Tous les champs sont requis." });
-        }
-
-        const newProduit = new Produit({ imageUrl, titre, description, prix, stock });
-        await newProduit.save();
-
-        res.status(201).json({ message: "Produit ajouté avec succès", produit: newProduit });
+        await produit.save();
+        res.status(201).json(produit);
     } catch (error) {
-        res.status(500).json({ error: "Erreur lors de l'ajout du produit", details: error.message });
+        res.status(500).json({ message: error.message });
     }
 });
+
 
 
 router.get("/", async (req, res) => {
@@ -48,16 +46,16 @@ router.delete("/:id", async (req, res) => {
 
 router.put("/:id", async (req, res) => {
     try {
-        const { imageUrl, titre, description, prix, stock } = req.body;
+        const { image, titre, description, prix, stock } = req.body;
 
       
-        if (!imageUrl || !titre || !description || prix == null || stock == null) {
+        if (!image || !titre || !description || prix == null || stock == null) {
             return res.status(400).json({ error: "Tous les champs sont requis pour la mise à jour." });
         }
 
         const produitUpdated = await Produit.findByIdAndUpdate(
             req.params.id,
-            { imageUrl, titre, description, prix, stock },
+            { image, titre, description, prix, stock },
             { new: true } 
         );
 
