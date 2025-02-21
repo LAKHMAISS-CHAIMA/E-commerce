@@ -1,14 +1,38 @@
 const express = require("express");
-const Produit = require("../models/produit.js");
+const multer = require("multer");
+const Produit = require("../models/Produit.js");
 const router = express.Router();
+const path = require("path");
+const fs = require("fs");
 
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const uploadPath = "images/";
+        if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath, { recursive: true });
+        }
+        cb(null, uploadPath);
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-';
+        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
 
-router.post("/", async (req, res) => {
+const upload = multer({ storage: storage });
+
+router.post("/", upload.single('image'), async (req, res) => {
     try {
+        if (!req.body.titre || !req.body.prix || !req.body.description || req.body.stock == null) {
+            return res.status(400).json({ message: "Tous les champs sont requis." });
+        }
+
         const produit = new Produit({
-            nom: req.body.nom,
+            titre: req.body.titre,
             prix: req.body.prix,
-            image: req.file ? `/uploads/${req.file.images}` : null 
+            description: req.body.description,
+            stock: req.body.stock,
+            image: req.file ? `images/${req.file.filename}` : "",
         });
 
         await produit.save();
@@ -18,8 +42,6 @@ router.post("/", async (req, res) => {
     }
 });
 
-
-
 router.get("/", async (req, res) => {
     try {
         const produits = await Produit.find();
@@ -28,8 +50,6 @@ router.get("/", async (req, res) => {
         res.status(500).json({ error: "Erreur lors de la récupération des produits" });
     }
 });
-
-
 
 router.delete("/:id", async (req, res) => {
     try {
@@ -43,20 +63,23 @@ router.delete("/:id", async (req, res) => {
     }
 });
 
-
-router.put("/:id", async (req, res) => {
+router.put("/:id", upload.single('image'), async (req, res) => {
     try {
-        const { image, titre, description, prix, stock } = req.body;
+        const { titre, description, prix, stock } = req.body;
+        let image = req.body.image;
 
-      
-        if (!image || !titre || !description || prix == null || stock == null) {
+        if (req.file) {
+            image = `images/${req.file.filename}`;
+        }
+
+        if (!titre || !description || prix == null || stock == null) {
             return res.status(400).json({ error: "Tous les champs sont requis pour la mise à jour." });
         }
 
         const produitUpdated = await Produit.findByIdAndUpdate(
             req.params.id,
             { image, titre, description, prix, stock },
-            { new: true } 
+            { new: true }
         );
 
         if (!produitUpdated) {
