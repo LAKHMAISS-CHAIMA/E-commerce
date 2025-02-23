@@ -1,28 +1,31 @@
 const mongoose = require("mongoose");
 
 const produitSchema = new mongoose.Schema({
-    image:{
+    image: {
         type: String,
         required: true,
     },
-    titre:{
+    titre: {
         type: String,
         required: true,
     },
-    description:{
+    description: {
         type: String,
         required: true,
     },
-    prix:{
+    prix: {
         type: Number,
         required: true,
-        min: 0,
+        min: [0, "Le prix doit être un nombre positif."],
+        validate: {
+            validator: (v) => v >= 0,
+            message: "Le prix ne peut pas être négatif."
+        }
     },
-    stock:{
+    stock: {
         type: Number,
         required: true,
-        min: 0,
-        default: 0
+        min: [0, "Le stock doit être un nombre positif."]
     }
 });
 

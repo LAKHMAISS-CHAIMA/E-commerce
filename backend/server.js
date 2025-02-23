@@ -1,27 +1,34 @@
+require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-const fs = require('fs');
+const { createServer } = require("http");
+const { Server } = require("socket.io");
 
+const produitRoutes = require("./routes/produitRoutes");
 
 const app = express();
-const PORT = 5000;
+const server = createServer(app);
+const io = new Server(server, { cors: { origin: "*" } });
+
 app.use(express.json());
 app.use(cors());
 
-  
+mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log("MongoDB connecté"))
+  .catch(err => console.log(err));
 
-
-app.use('/images', express.static('images'));
-
-mongoose.connect('mongodb://127.0.0.1:27017/produits')
-    .then(() => {
-        console.log('Connected to mongoDB');
-    })
-    .catch((err) => console.log(err));
-
-const produitRoutes = require("./routes/produitRoutes");
 app.use("/api/produits", produitRoutes);
 
+io.on("connection", (socket) => {
+  console.log("Un client est connecté");
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  socket.on("disconnect", () => {
+    console.log("Un client s'est déconnecté");
+  });
+});
+
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => console.log(`Serveur en écoute sur le port ${PORT}`));
+
+module.exports = { io };
